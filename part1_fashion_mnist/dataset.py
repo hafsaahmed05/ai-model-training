@@ -68,7 +68,7 @@ def get_dataloaders(batch_size=64, validation_split=0.1):
 
 if __name__ == "__main__":
 
-    train_loader, val_loader, test_loader = get_data_loaders()
+    train_loader, val_loader, test_loader = get_dataloaders()
 
     # Test one batch
     images, labels = next(iter(train_loader))
