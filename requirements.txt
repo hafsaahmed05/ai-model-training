@@ -3,3 +3,7 @@ torchvision
 matplotlib
 numpy
 scikit-learn
+gymnasium
+swig
+gymnasium[box-2d]
+moviepy
