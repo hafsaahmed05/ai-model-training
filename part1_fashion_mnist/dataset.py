@@ -1,5 +1,4 @@
 # dataset.py
-
 import torch
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
@@ -7,8 +6,7 @@ from torchvision import datasets, transforms
 
 def get_dataloaders(batch_size=64, validation_split=0.1):
     """
-    Loads Fashion-MNIST dataset and returns
-    train, validation, and test DataLoaders.
+    Loads Fashion-MNIST dataset and returns train, validation, and test DataLoaders.
     """
 
     # Transform:
