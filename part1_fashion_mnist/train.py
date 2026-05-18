@@ -4,6 +4,7 @@ import json
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import argparse
 
 from dataset import get_dataloaders
 from model import MLP, CNN
@@ -16,10 +17,28 @@ from model import MLP, CNN
 MODEL_TYPE = "cnn"      # "mlp" or "cnn"
 BATCH_SIZE = 64
 LEARNING_RATE = 0.001
-EPOCHS = 1
+EPOCHS = 15
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+def parse_args():
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=["cnn", "mlp"],
+        default="cnn"
+    )
+
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=15
+    )
+
+    return parser.parse_args()
 
 # -----------------------------
 # Training Function
@@ -108,6 +127,10 @@ def validate(model, loader, criterion):
 # -----------------------------
 
 def main():
+    args = parse_args()
+
+    model_type = args.model
+    epochs = args.epochs
 
     # Create outputs directory
     os.makedirs("outputs", exist_ok=True)
@@ -118,14 +141,14 @@ def main():
     )
 
     # Select model
-    if MODEL_TYPE == "mlp":
+    if model_type == "mlp":
         model = MLP()
 
-    elif MODEL_TYPE == "cnn":
+    elif model_type == "cnn":
         model = CNN()
 
     else:
-        raise ValueError("Invalid MODEL_TYPE")
+        raise ValueError("Invalid model_type")
 
     model = model.to(DEVICE)
 
@@ -146,10 +169,10 @@ def main():
     val_accuracies = []
 
     print(f"\nTraining on {DEVICE}")
-    print(f"Model: {MODEL_TYPE.upper()}\n")
+    print(f"Model: {model_type.upper()}\n")
 
     # Epoch loop
-    for epoch in range(EPOCHS):
+    for epoch in range(epochs):
 
         train_loss, train_acc = train_one_epoch(
             model,
@@ -173,7 +196,7 @@ def main():
 
         # Print progress
         print(
-            f"Epoch [{epoch+1}/{EPOCHS}] | "
+            f"Epoch [{epoch+1}/{epochs}] | "
             f"Train Loss: {train_loss:.4f} | "
             f"Train Acc: {train_acc:.2f}% | "
             f"Val Loss: {val_loss:.4f} | "
@@ -181,7 +204,7 @@ def main():
         )
 
     # Save model checkpoint
-    model_path = f"outputs/{MODEL_TYPE}_fashionmnist.pth"
+    model_path = f"outputs/{model_type}_fashionmnist.pth"
 
     torch.save(model.state_dict(), model_path)
 
