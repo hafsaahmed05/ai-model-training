@@ -1,18 +1,6 @@
 """
 visualize.py  –  Part 2: Lunar Lander DQN
 Reads training reward logs and produces all plots required by the rubric.
-
-Expected inputs
----------------
-  outputs/training_rewards.json     – written by train_dqn.py (see note below)
-  outputs/mod_rewards.json          – same format, from your modification run
-  outputs/eval_rewards.json         – written by evaluate.py
-
-Outputs saved to outputs/
---------------------------------------
-  reward_curve.png          episodic reward + 100-ep moving average
-  baseline_vs_mod.png       side-by-side comparison of baseline and modification
-  eval_distribution.png     histogram of evaluation episode rewards
 """
 
 import argparse
@@ -36,24 +24,48 @@ MOVING_WINDOW   = 100         # episodes in the moving average
 # ── Helpers ──────────────────────────────────────────────────────────────────────
 def parse_args():
     parser = argparse.ArgumentParser(description="Plot DQN training curves.")
-    parser.add_argument("--baseline", type=str, default="outputs/training_rewards.json",
-                        help="JSON file with baseline training rewards.")
-    parser.add_argument("--mod", type=str, default=None,
-                        help="JSON file with modification training rewards (optional).")
-    parser.add_argument("--eval", type=str, default="outputs/eval_rewards.json",
-                        help="JSON file with evaluation rewards from evaluate.py.")
-    parser.add_argument("--output_dir", type=str, default="outputs")
+
+    parser.add_argument(
+        "--baseline",
+        type=str,
+        default="outputs/baseline/training_rewards.json",
+        help="Baseline rewards file."
+    )
+
+    parser.add_argument(
+        "--mod",
+        type=str,
+        default="outputs/modified/rewards.npy",
+        help="Modified rewards file."
+    )
+
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="outputs/plots"
+    )
+
     return parser.parse_args()
 
-
 def load_rewards(path):
-    """Load a rewards JSON file; returns list of floats."""
-    with open(path, "r") as f:
-        data = json.load(f)
-    # Support both {"rewards": [...]} and a bare list
-    if isinstance(data, dict):
-        return data["rewards"]
-    return data
+
+    # NPY files
+    if path.endswith(".npy"):
+
+        return np.load(path)
+
+    # JSON files
+    elif path.endswith(".json"):
+
+        with open(path, "r") as f:
+
+            data = json.load(f)
+
+        if isinstance(data, dict):
+
+            return data["rewards"]
+
+        return data
 
 
 def moving_average(rewards, window):
@@ -64,6 +76,47 @@ def moving_average(rewards, window):
         result.append(np.mean(rewards[start : i + 1]))
     return result
 
+def plot_moving_average(rewards, output_dir,
+                        filename="moving_avg_100.png"):
+
+    ma = moving_average(rewards, MOVING_WINDOW)
+
+    episodes = list(range(1, len(rewards) + 1))
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    ax.plot(
+        episodes,
+        ma,
+        linewidth=2.5,
+        color=AVG_COLOR,
+        label=f"{MOVING_WINDOW}-Episode Moving Average"
+    )
+
+    ax.axhline(
+        200,
+        linestyle="--",
+        linewidth=1.2,
+        alpha=0.7,
+        label="Solved Threshold (200)"
+    )
+
+    style_ax(
+        ax,
+        title=f"{MOVING_WINDOW}-Episode Moving Average",
+        xlabel="Episode",
+        ylabel="Average Reward"
+    )
+
+    fig.tight_layout()
+
+    path = os.path.join(output_dir, filename)
+
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+
+    plt.close(fig)
+
+    print(f"[visualize] Moving average saved → {path}")
 
 def style_ax(ax, title, xlabel, ylabel, legend=True):
     ax.set_title(title, fontsize=12, fontweight="semibold", pad=10)
@@ -256,6 +309,11 @@ def main():
     plot_reward_curve(baseline_rewards, args.output_dir,
                       label="Baseline", color=BASELINE_COLOR,
                       filename="reward_curve.png")
+    
+    plot_moving_average(
+        baseline_rewards,
+        args.output_dir
+    )
 
     # ── Modification comparison (optional) ───────────────────────────────────────
     if args.mod:
@@ -271,17 +329,6 @@ def main():
             plot_baseline_vs_mod(baseline_rewards, mod_rewards, args.output_dir)
     else:
         print("[visualize] No --mod file provided; skipping baseline vs mod plot.")
-
-    # ── Evaluation distribution ───────────────────────────────────────────────────
-    if os.path.exists(args.eval):
-        eval_data    = json.load(open(args.eval))
-        eval_rewards = eval_data["rewards"]
-        print(f"[visualize] Loaded {len(eval_rewards)} evaluation episodes.")
-        plot_eval_distribution(eval_rewards, args.output_dir)
-    else:
-        print(f"[visualize] Eval log not found at {args.eval}. "
-              "Run evaluate.py first.")
-
 
 if __name__ == "__main__":
     main()

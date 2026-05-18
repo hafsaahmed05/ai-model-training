@@ -117,12 +117,12 @@ os.makedirs("outputs", exist_ok=True)
 
 torch.save(
     agent.q_network.state_dict(),
-    "outputs/model_weights.pth"
+    "outputs/baseline/model_weights.pth"
 )
 
 print("Training complete.")
 print("Model saved.")
 
 os.makedirs("outputs", exist_ok=True)
-with open("outputs/training_rewards.json", "w") as f:
+with open("outputs/baseline/training_rewards.json", "w") as f:
     json.dump({"rewards": episode_rewards}, f)
